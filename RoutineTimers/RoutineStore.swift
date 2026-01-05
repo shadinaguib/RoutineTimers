@@ -39,8 +39,9 @@ final class RoutineStore: ObservableObject {
                 steps: [
                     Step(title: "Take vitamins", minutes: 2),
                     Step(title: "Shower and prep", minutes: 10),
+                    Step(title: "Iron and Dress", minutes: 5),
                     Step(title: "Prepare gym bag", minutes: 3),
-                    Step(title: "Misc", minutes: 5),                    
+                    Step(title: "Misc", minutes: 5),             
                     Step(title: "Leave appartment", minutes: 1)
                 ]
             ),
