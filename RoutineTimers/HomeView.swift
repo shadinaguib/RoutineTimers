@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var store: RoutineStore
     @State private var autoStartRoutine: Routine?
+    private let cardCornerRadius: CGFloat = 16
 
     var body: some View {
         NavigationStack {
@@ -28,13 +29,21 @@ struct HomeView: View {
                                         }
                                     }
                             } label: {
-                                Text("Start")
-                                    .font(.headline)
+                                Label("Start", systemImage: "play.fill")
+                                    .font(.subheadline.weight(.semibold))
                                     .padding(.vertical, 10)
-                                    .padding(.horizontal, 14)
+                                    .padding(.horizontal, 12)
+                                    .frame(minWidth: 84)
                             }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.white)
+                            .background(Color.blue)
+                            .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
                         }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.blue.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
                     }
                 }
 
@@ -97,6 +106,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(routine.name)
                 .font(.title2).bold()
+                .lineLimit(1)
             HStack(spacing: 12) {
                 Label("\(routine.steps.count) steps", systemImage: "list.number")
                 Label("\(routine.totalMinutes) min", systemImage: "clock")
@@ -105,9 +115,6 @@ struct HomeView: View {
             .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.blue.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 

@@ -14,7 +14,8 @@ struct RoutinePlayerView: View {
     var body: some View {
         VStack(spacing: 24) {
             Text(routine.name)
-                .font(.title).bold()
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
 
             if let step = currentStep {
                 Text("Step \(store.currentStepIndex + 1) of \(routine.steps.count)")
@@ -22,7 +23,7 @@ struct RoutinePlayerView: View {
                     .foregroundStyle(.secondary)
 
                 Text(step.title)
-                    .font(.title3)
+                    .font(.title).bold()
 
                 Text(formatTime(store.secondsRemaining))
                     .font(.system(size: 96, weight: .heavy, design: .rounded))
@@ -47,24 +48,26 @@ struct RoutinePlayerView: View {
                 }
             }
 
-            HStack(spacing: 16) {
+            VStack(spacing: 14) {
+                Button(role: .destructive) {
+                    store.skipStep()
+                } label: {
+                    Label("Next", systemImage: "forward.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
                 Button(action: {
                     store.isRunning ? store.pause() : store.resume()
                 }) {
                     Label(store.isRunning ? "Pause" : "Resume", systemImage: store.isRunning ? "pause.fill" : "play.fill")
-                        .font(.headline)
+                        .font(.title3.weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-
-                Button(role: .destructive) {
-                    store.skipStep()
-                } label: {
-                    Label("Skip", systemImage: "forward.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
+                .controlSize(.large)
             }
 
             if currentStep != nil {
