@@ -37,10 +37,10 @@ final class RoutineStore: ObservableObject {
             Routine(
                 name: "Morning Launch",
                 steps: [
-                    Step(title: "Feet on floor", minutes: 1),
-                    Step(title: "Take creatine pills", minutes: 1),
-                    Step(title: "Shower, brush teeth, get dressed", minutes: 10),
-                    Step(title: "Gym bag", minutes: 3),
+                    Step(title: "Take vitamins", minutes: 2),
+                    Step(title: "Shower and prep", minutes: 10),
+                    Step(title: "Prepare gym bag", minutes: 3),
+                    Step(title: "Misc", minutes: 5),                    
                     Step(title: "Leave appartment", minutes: 1)
                 ]
             ),
@@ -56,10 +56,8 @@ final class RoutineStore: ObservableObject {
             Routine(
                 name: "Workout Start",
                 steps: [
-                    Step(title: "Put on workout clothes", minutes: 4),
-                    Step(title: "Warm-up", minutes: 4),
-                    Step(title: "One set (push/squat/pull)", minutes: 4),
-                    Step(title: "Decide: continue or finish", minutes: 2)
+                    Step(title: "Take bag", minutes: 2),
+                    Step(title: "Leave office (to gym)", minutes: 15)
                 ]
             )
         ]

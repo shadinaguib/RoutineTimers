@@ -11,8 +11,6 @@ struct HomeView: View {
                 Text("Routine Timers")
                     .font(.largeTitle).bold()
 
-                statsRow
-
                 VStack(spacing: 12) {
                     ForEach(store.routines) { routine in
                         HStack(spacing: 12) {
@@ -82,24 +80,6 @@ struct HomeView: View {
                 autoStartRoutine = routine
             }
         }
-    }
-
-    private var statsRow: some View {
-        HStack(spacing: 20) {
-            statBox(title: "Today", value: "\(store.todayCount)")
-            statBox(title: "Streak", value: "\(store.streakCount)")
-        }
-    }
-
-    private func statBox(title: String, value: String) -> some View {
-        VStack {
-            Text(title).font(.subheadline).foregroundStyle(.secondary)
-            Text(value).font(.title2).monospacedDigit().bold()
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private func routineButton(_ routine: Routine) -> some View {
