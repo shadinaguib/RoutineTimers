@@ -5,6 +5,7 @@ enum NotificationManager {
     static let morningCategoryId = "morning_routine"
     static let startActionId = "start_morning_routine"
     static let autoStartKey = "RoutineTimers.autoStartMorningRoutine"
+    static let routineStepNotificationPrefix = "routine_step_"
 
     static func configure() {
         let center = UNUserNotificationCenter.current()
@@ -48,6 +49,61 @@ enum NotificationManager {
             trigger: trigger
         )
         UNUserNotificationCenter.current().add(request)
+    }
+
+    static func scheduleRoutineStepNotifications(
+        routineName: String,
+        steps: [Step],
+        startingAt stepIndex: Int,
+        secondsRemainingInStep: Int
+    ) {
+        cancelRoutineStepNotifications()
+        guard stepIndex < steps.count else { return }
+
+        var cumulativeSeconds = max(1, secondsRemainingInStep)
+        let center = UNUserNotificationCenter.current()
+
+        for idx in stepIndex..<steps.count {
+            let step = steps[idx]
+            let title = routineName
+            let nextTitle = steps.indices.contains(idx + 1) ? steps[idx + 1].title : nil
+            let body = nextTitle != nil
+                ? "Step complete: \(step.title). Next: \(nextTitle!)"
+                : "Routine complete"
+
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+
+            let trigger = UNTimeIntervalNotificationTrigger(
+                timeInterval: TimeInterval(cumulativeSeconds),
+                repeats: false
+            )
+
+            let request = UNNotificationRequest(
+                identifier: "\(routineStepNotificationPrefix)\(idx)",
+                content: content,
+                trigger: trigger
+            )
+            center.add(request)
+
+            if steps.indices.contains(idx + 1) {
+                cumulativeSeconds += steps[idx + 1].minutes * 60
+            }
+        }
+    }
+
+    static func cancelRoutineStepNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { requests in
+            let ids = requests
+                .map(\.identifier)
+                .filter { $0.hasPrefix(routineStepNotificationPrefix) }
+            if !ids.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: ids)
+            }
+        }
     }
 
     static func morningRoutineSummary() -> String {

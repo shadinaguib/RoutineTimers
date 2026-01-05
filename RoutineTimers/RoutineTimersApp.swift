@@ -4,11 +4,22 @@ import UserNotifications
 @main
 struct RoutineTimersApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = RoutineStore()
     var body: some Scene {
         WindowGroup {
             HomeView()
                 .environmentObject(store)
+                .onChange(of: scenePhase) { _, newPhase in
+                    switch newPhase {
+                    case .active:
+                        store.appDidBecomeActive()
+                    case .background:
+                        store.appDidEnterBackground()
+                    default:
+                        break
+                    }
+                }
         }
     }
 }

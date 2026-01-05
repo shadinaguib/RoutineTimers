@@ -18,6 +18,7 @@ final class RoutineStore: ObservableObject {
     // Timer
     private var timer: Timer?
     private let liveActivityManager = RoutineLiveActivityManager()
+    private var backgroundedAt: Date?
 
     // Persistence
     private let historyKey = "RoutineTimers.history"
@@ -73,6 +74,7 @@ final class RoutineStore: ObservableObject {
         isPlaying = true
         startTimer()
         startLiveActivity(for: routine)
+        scheduleStepNotificationsIfNeeded(for: routine)
     }
 
     func pause() {
@@ -81,6 +83,7 @@ final class RoutineStore: ObservableObject {
         if let routine = activeRoutine {
             updateLiveActivity(for: routine)
         }
+        NotificationManager.cancelRoutineStepNotifications()
     }
 
     func resume() {
@@ -89,6 +92,7 @@ final class RoutineStore: ObservableObject {
         startTimer()
         if let routine = activeRoutine {
             updateLiveActivity(for: routine)
+            scheduleStepNotificationsIfNeeded(for: routine)
         }
     }
 
@@ -103,9 +107,11 @@ final class RoutineStore: ObservableObject {
         isRunning = false
         isPlaying = false
         activeRoutine = nil
+        backgroundedAt = nil
         if let routine {
             endLiveActivity(for: routine)
         }
+        NotificationManager.cancelRoutineStepNotifications()
     }
 
     // MARK: - Editing
@@ -140,6 +146,7 @@ final class RoutineStore: ObservableObject {
             currentStepIndex += 1
             secondsRemaining = routine.steps[currentStepIndex].minutes * 60
             updateLiveActivity(for: routine)
+            scheduleStepNotificationsIfNeeded(for: routine)
         } else {
             // Completed routine
             completeRoutine(named: routine.name)
@@ -151,6 +158,7 @@ final class RoutineStore: ObservableObject {
         timer?.invalidate()
         isRunning = false
         isPlaying = false
+        backgroundedAt = nil
         let run = Run(routineName: name, completedAt: Date())
         history.insert(run, at: 0)
         saveHistory()
@@ -158,6 +166,7 @@ final class RoutineStore: ObservableObject {
         if let routine {
             endLiveActivity(for: routine)
         }
+        NotificationManager.cancelRoutineStepNotifications()
     }
 
     // MARK: - Live Activity
@@ -208,6 +217,52 @@ final class RoutineStore: ObservableObject {
             secondsRemaining: 0,
             stepEndDate: nil,
             isRunning: false
+        )
+    }
+
+    // MARK: - Background Sync
+    func appDidEnterBackground() {
+        guard isRunning else { return }
+        backgroundedAt = Date()
+    }
+
+    func appDidBecomeActive() {
+        guard isRunning else {
+            backgroundedAt = nil
+            return
+        }
+        guard let backgroundedAt else { return }
+        let elapsed = Int(Date().timeIntervalSince(backgroundedAt))
+        self.backgroundedAt = nil
+        if elapsed > 0 {
+            applyElapsed(seconds: elapsed)
+        }
+    }
+
+    private func applyElapsed(seconds: Int) {
+        guard seconds > 0 else { return }
+        var remaining = seconds
+        while remaining > 0, let routine = activeRoutine {
+            if remaining < secondsRemaining {
+                secondsRemaining -= remaining
+                remaining = 0
+                updateLiveActivity(for: routine)
+                scheduleStepNotificationsIfNeeded(for: routine)
+            } else {
+                remaining -= secondsRemaining
+                advance(from: routine)
+                if activeRoutine == nil { break }
+            }
+        }
+    }
+
+    private func scheduleStepNotificationsIfNeeded(for routine: Routine) {
+        guard isRunning else { return }
+        NotificationManager.scheduleRoutineStepNotifications(
+            routineName: routine.name,
+            steps: routine.steps,
+            startingAt: currentStepIndex,
+            secondsRemainingInStep: secondsRemaining
         )
     }
 
