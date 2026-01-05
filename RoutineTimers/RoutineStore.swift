@@ -17,6 +17,7 @@ final class RoutineStore: ObservableObject {
 
     // Timer
     private var timer: Timer?
+    private let liveActivityManager = RoutineLiveActivityManager()
 
     // Persistence
     private let historyKey = "RoutineTimers.history"
@@ -72,17 +73,24 @@ final class RoutineStore: ObservableObject {
         isRunning = true
         isPlaying = true
         startTimer()
+        startLiveActivity(for: routine)
     }
 
     func pause() {
         isRunning = false
         timer?.invalidate()
+        if let routine = activeRoutine {
+            updateLiveActivity(for: routine)
+        }
     }
 
     func resume() {
         guard activeRoutine != nil else { return }
         isRunning = true
         startTimer()
+        if let routine = activeRoutine {
+            updateLiveActivity(for: routine)
+        }
     }
 
     func skipStep() {
@@ -91,10 +99,14 @@ final class RoutineStore: ObservableObject {
     }
 
     func quitRoutine() {
+        let routine = activeRoutine
         timer?.invalidate()
         isRunning = false
         isPlaying = false
         activeRoutine = nil
+        if let routine {
+            endLiveActivity(for: routine)
+        }
     }
 
     // MARK: - Editing
@@ -128,6 +140,7 @@ final class RoutineStore: ObservableObject {
         if currentStepIndex + 1 < routine.steps.count {
             currentStepIndex += 1
             secondsRemaining = routine.steps[currentStepIndex].minutes * 60
+            updateLiveActivity(for: routine)
         } else {
             // Completed routine
             completeRoutine(named: routine.name)
@@ -135,6 +148,7 @@ final class RoutineStore: ObservableObject {
     }
 
     private func completeRoutine(named name: String) {
+        let routine = activeRoutine
         timer?.invalidate()
         isRunning = false
         isPlaying = false
@@ -142,7 +156,62 @@ final class RoutineStore: ObservableObject {
         history.insert(run, at: 0)
         saveHistory()
         activeRoutine = nil
+        if let routine {
+            endLiveActivity(for: routine)
+        }
     }
+
+    // MARK: - Live Activity
+    private func startLiveActivity(for routine: Routine) {
+        let state = liveActivityState(for: routine)
+        liveActivityManager.start(routine: routine, state: state)
+    }
+
+    private func updateLiveActivity(for routine: Routine) {
+        let state = liveActivityState(for: routine)
+        liveActivityManager.update(state: state)
+    }
+
+    private func endLiveActivity(for routine: Routine) {
+        let state = finalLiveActivityState(for: routine)
+        liveActivityManager.end(finalState: state)
+    }
+
+    private func liveActivityState(for routine: Routine) -> RoutineLiveActivityAttributes.ContentState {
+        let stepCount = routine.steps.count
+        let currentIndex = min(max(currentStepIndex, 0), max(stepCount - 1, 0))
+        let currentTitle = routine.steps.indices.contains(currentIndex)
+            ? routine.steps[currentIndex].title
+            : "Complete"
+        let nextIndex = currentIndex + 1
+        let nextTitle = routine.steps.indices.contains(nextIndex)
+            ? routine.steps[nextIndex].title
+            : nil
+        let stepEndDate = isRunning ? Date().addingTimeInterval(TimeInterval(secondsRemaining)) : nil
+        return RoutineLiveActivityAttributes.ContentState(
+            currentTitle: currentTitle,
+            nextTitle: nextTitle,
+            stepIndex: currentIndex,
+            stepCount: stepCount,
+            secondsRemaining: secondsRemaining,
+            stepEndDate: stepEndDate,
+            isRunning: isRunning
+        )
+    }
+
+    private func finalLiveActivityState(for routine: Routine) -> RoutineLiveActivityAttributes.ContentState {
+        let stepCount = routine.steps.count
+        return RoutineLiveActivityAttributes.ContentState(
+            currentTitle: "Routine complete",
+            nextTitle: nil,
+            stepIndex: stepCount,
+            stepCount: stepCount,
+            secondsRemaining: 0,
+            stepEndDate: nil,
+            isRunning: false
+        )
+    }
+
 
     // MARK: - Stats
     var todayCount: Int {

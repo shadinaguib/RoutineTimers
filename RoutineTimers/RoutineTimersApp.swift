@@ -5,7 +5,6 @@ import UserNotifications
 struct RoutineTimersApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = RoutineStore()
-
     var body: some Scene {
         WindowGroup {
             HomeView()
